@@ -8,12 +8,22 @@ class Training:
         self.config = config
 
     def get_base_model(self):
+        # Clear backend to reset any pre-existing states
+        tf.keras.backend.clear_session()
+
+        # Load the model
         self.model = tf.keras.models.load_model(
             self.config.updated_base_model_path
         )
 
-    def train_valid_generator(self):
+        # Re-compile the model with a new optimizer
+        self.model.compile(
+            optimizer=tf.keras.optimizers.Adam(),  # or any other optimizer
+            loss='categorical_crossentropy',  # or your specific loss function
+            metrics=['accuracy']
+        )
 
+    def train_valid_generator(self):
         datagenerator_kwargs = dict(
             rescale=1. / 255,
             validation_split=0.20
@@ -58,7 +68,8 @@ class Training:
 
     @staticmethod
     def save_model(path: Path, model: tf.keras.Model):
-        model.save(path)
+        # Save the model in the newer Keras format
+        model.save(path.with_suffix('.keras'))  # Save as .keras format
 
     def train(self, callback_list: list):
         self.steps_per_epoch = self.train_generator.samples // self.train_generator.batch_size
